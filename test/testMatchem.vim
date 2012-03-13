@@ -60,9 +60,14 @@ endfunction " }}}
 
 function TestParenNewLine() " {{{
   set ft=python
-  exec "normal itest = (\<cr>\<esc>"
-  call vunit#AssertEquals(getline(1), 'test = (', 'Paren failed, line 1.')
+  exec "normal i(\<cr>\<esc>"
+  call vunit#AssertEquals(getline(1), '(', 'Paren failed, line 1.')
   call vunit#AssertEquals(getline(2), ')', 'Paren failed, line 2.')
+  1,$delete _
+
+  exec "normal itest = (\<cr>\<esc>"
+  call vunit#AssertEquals(getline(1), 'test = (', 'Paren w/ text failed, line 1.')
+  call vunit#AssertEquals(getline(2), ')', 'Paren  w/ text failed, line 2.')
   1,$delete _
 endfunction " }}}
 
@@ -114,6 +119,27 @@ function TestManualQuote() " {{{
   call cursor(1, 7)
   normal i"
   call vunit#AssertEquals(getline('.'), 'foo = "foo"', 'Wrong leading quote result.')
+  1,$delete _
+endfunction " }}}
+
+function TestAddParens() " {{{
+  set ft=python
+
+  call setline('.', 'foo = ("bar", "baz")')
+  call vunit#AssertEquals(
+    \ getline('.'), 'foo = ("bar", "baz")', 'Wrong initial state.')
+  call cursor(1, 15)
+  exec "normal i(\<esc>"
+  call vunit#AssertEquals(
+    \ getline('.'), 'foo = ("bar", ("baz")', 'Wrong new open paren.')
+  call cursor(1, 21)
+  exec "normal i)\<esc>"
+  call vunit#AssertEquals(
+    \ getline('.'), 'foo = ("bar", ("baz"))', 'Wrong new close paren add.')
+  call cursor(1, 22)
+  exec "normal i)\<esc>"
+  call vunit#AssertEquals(
+    \ getline('.'), 'foo = ("bar", ("baz"))', 'Wrong new close paren overwrite.')
   1,$delete _
 endfunction " }}}
 
@@ -224,6 +250,35 @@ function TestUndo() " {{{
 "  call vunit#AssertEquals(line('$'), 2, 'Wrong line numbers after undo.')
 "  call vunit#AssertEquals(getline(1), '#first line', 'Wrong first line after undo.')
 "  call vunit#AssertEquals(getline(2), '#last line', 'Wrong last line after undo.')
+endfunction " }}}
+
+function TestExpandCr() " {{{
+  set ft=python
+  let indent = ''
+  let index = 0
+  while index < &sw
+    let indent .= ' '
+    let index += 1
+  endwhile
+
+  exec "normal i{\<cr>'foo': 'bar'\<esc>"
+  call vunit#AssertEquals(getline(1), '{', 'Curly failed, line 1.')
+  call vunit#AssertEquals(getline(2), indent . "'foo': 'bar'", 'Curly failed, line 2.')
+  call vunit#AssertEquals(getline(3), '}', 'Paren failed, line 3.')
+  1,$delete _
+
+  call setline(1, "test = {'foo': 'bar'}")
+  call cursor(1, 9)
+  exec "normal i\<cr>\<esc>"
+  call vunit#AssertEquals(getline(1), 'test = {', 'Curly insert <cr> failed, line 1.')
+  call vunit#AssertEquals(
+    \ getline(2), indent . "'foo': 'bar'}", 'Curly insert <cr> failed, line 2.')
+  call cursor(2, &sw + 13)
+  exec "normal i\<cr>\<esc>"
+  call vunit#AssertEquals(getline(1), 'test = {', 'Curly insert <cr> failed, line 1.')
+  call vunit#AssertEquals(
+    \ getline(2), indent . "'foo': 'bar'", 'Curly insert <cr> failed, line 2.')
+  call vunit#AssertEquals(getline(3), '}', 'Curly insert <cr> failed, line 3.')
 endfunction " }}}
 
 function TestNestedParenEdgeCase() " {{{

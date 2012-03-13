@@ -61,6 +61,10 @@ if !exists('g:MatchemExpandCrEndChars')
   let g:MatchemExpandCrEndChars = ['}', ']']
 endif
 
+if !exists('g:MatchemMaxMatchSearchDepth')
+  let g:MatchemMaxMatchSearchDepth = 100
+endif
+
 let g:MatchemEdgeCases = {
     \ 'perl': ['s:PerlBackTick'],
     \ 'python': ['s:PythonTripleQuote'],
@@ -309,19 +313,42 @@ function! s:MatchEnd(char) " {{{
     if pair[0] == 0
       let result = a:char
 
-    " matching start found, so don't add the character
+    " matching start found
     else
       " we auto added the end char, so dequeue it and return the user entered one
       if s:RepeatFixupDequeue(end)
         call setline('.', line[:col - 2] . line[col + 0:])
         let result = a:char
 
-      " the end char was not auto added, so without some serious parsing, the
-      " status of the existing end char is unknown. error on the side of
-      " not deleting a char that should be there.
       else
-        "let result = a:char . "\<del>"
-        let result = a:char
+        let result = a:char . "\<del>"
+
+        " walk up the file until we find a start w/ no end or hit the top. in
+        " the prior case we know the char needs to be added, in the latter we
+        " assume we'll just overwrite it.
+        let save_pos = getpos('.')
+        try
+          let cur = [line('.'), col('.')]
+          let pick = cur
+          let pair = [0, 0]
+          let depth = 0
+          let pos = searchpos(start, 'bW')
+          while pos[0] && depth < g:MatchemMaxMatchSearchDepth
+            let pair = searchpairpos('\M' . start, '', '\M' . end, 'nW', skip)
+            if !pair[0]
+              let pick = pos
+              break
+            endif
+            let pos = searchpos(start, 'bW')
+            let depth += 1
+          endwhile
+
+          if pick != cur
+            let result = a:char
+          endif
+        finally
+          call setpos('.', save_pos)
+        endtry
       endif
     endif
   endif
@@ -402,7 +429,11 @@ function! s:RepeatFixupFlush(char) " {{{
     let line = getline('.')
     let col = col('.')
     let start = max([col - 2, 0])
-    let pre = start > 0 ? line[:start] : ''
+    if start > 0 || a:char == '<cr>'
+      let pre = line[:start]
+    else
+      let pre = ''
+    endif
     call setline('.', pre . line[col + len(result) - 1:])
 
     " make sure the cursor ends up where the user expects it to when leaving
@@ -440,8 +471,10 @@ function! s:ExpandCr(cr) " {{{
   let col = col('.')
   let line = getline('.')
   let char = line[col - 1]
+  let prev = len(line) >= (col - 2) ? line[col - 2] : ''
   if index(b:MatchemExpandCrEndChars, char) != -1 &&
-   \ index(values(b:matchempairs), char) != -1
+   \ index(values(b:matchempairs), char) != -1 &&
+   \ prev == s:GetStartChar(char)
 
     " undo works as it should, but this doesn't actually fix repeat in the
     " case due to the need for cursor movements (left, up, esc)
