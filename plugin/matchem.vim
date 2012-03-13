@@ -6,7 +6,7 @@
 " }}}
 "
 " License: {{{
-"   Copyright (c) 2010 - 2011, Eric Van Dewoestine
+"   Copyright (c) 2010 - 2012, Eric Van Dewoestine
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -402,7 +402,7 @@ function! s:RepeatFixupFlush(char) " {{{
     let line = getline('.')
     let col = col('.')
     let start = max([col - 2, 0])
-    let pre = line[:start]
+    let pre = start > 0 ? line[:start] : ''
     call setline('.', pre . line[col + len(result) - 1:])
 
     " make sure the cursor ends up where the user expects it to when leaving

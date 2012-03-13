@@ -58,6 +58,14 @@ function TestParenBracketCurly() " {{{
   1,$delete _
 endfunction " }}}
 
+function TestParenNewLine() " {{{
+  set ft=python
+  exec "normal itest = (\<cr>\<esc>"
+  call vunit#AssertEquals(getline(1), 'test = (', 'Paren failed, line 1.')
+  call vunit#AssertEquals(getline(2), ')', 'Paren failed, line 2.')
+  1,$delete _
+endfunction " }}}
+
 function TestCurly() " {{{
   set ft=javascript
   exec "normal iif(foo){\<cr>"
@@ -224,58 +232,6 @@ function TestNestedParenEdgeCase() " {{{
   call cursor(1, 10)
   normal i()
   call vunit#AssertEquals(getline('.'), 'foo(bar=[()])', 'Nested paren failed.')
-  1,$delete _
-endfunction " }}}
-
-function TestPythonQuotes() " {{{
-  set ft=python
-
-  normal ir'
-  call vunit#AssertEquals(getline('.'), "r''", 'Raw quote failed.')
-  1,$delete _
-
-  normal ir"
-  call vunit#AssertEquals(getline('.'), 'r""', 'Raw double quote failed.')
-  1,$delete _
-
-  normal iu'
-  call vunit#AssertEquals(getline('.'), "u''", 'Unicode quote failed.')
-  1,$delete _
-
-  normal iu"
-  call vunit#AssertEquals(getline('.'), 'u""', 'Unicode double quote failed.')
-  1,$delete _
-endfunction " }}}
-
-function TestPythonTripleQuote() " {{{
-  set ft=python
-
-  normal i"""
-  call vunit#AssertEquals(getline('.'), '"""', 'Triple quote failed.')
-  1,$delete _
-
-  normal ir"""
-  call vunit#AssertEquals(getline('.'), 'r"""', 'Raw triple quote failed.')
-  1,$delete _
-
-  normal iu"""
-  call vunit#AssertEquals(getline('.'), 'u"""', 'Unicode triple quote failed.')
-  1,$delete _
-endfunction " }}}
-
-function TestVimComment() " {{{
-  set ft=vim
-
-  normal ilet foo = "foo
-  call vunit#AssertEquals(getline('.'), 'let foo = "foo"', 'Double quote failed.')
-  1,$delete _
-
-  normal i"
-  call vunit#AssertEquals(getline('.'), '"', 'Leading comment failed.')
-  1,$delete _
-
-  normal ifunction foo() "
-  call vunit#AssertEquals(getline('.'), 'function foo() "', 'Trailing vim comment failed.')
   1,$delete _
 endfunction " }}}
 
