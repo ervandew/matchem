@@ -470,28 +470,38 @@ function! s:ExpandCr(cr) " {{{
 
   let col = col('.')
   let line = getline('.')
+
+  " flush on every <cr> to handle apparent vim bug w/ undo:
+  " - empty file:
+  "   (<cr>)
+  "   - undo won't remove the auto added close paren
+  "   - if there is blank line below, then undo works correctly
+  "     - somehow related to Path 7.3.452 (undo + paste close to last line)?
+  let result = s:RepeatFixupFlush('<cr>')
+  let lefts = ""
+  let index = 0
+  while index < len(result)
+    let lefts .= "\<left>"
+    let index += 1
+  endwhile
+  let result .= lefts
+
+  " only return a cr if nothing else is mapped to it since we don't want
+  " to duplicate a cr returned by another mapping.
+  let result .= (a:cr ? "\<cr>" : "")
+
   let char = line[col - 1]
   let prev = len(line) >= (col - 2) ? line[col - 2] : ''
   if index(b:MatchemExpandCrEndChars, char) != -1 &&
    \ index(values(b:matchempairs), char) != -1 &&
    \ prev == s:GetStartChar(char)
 
-    " undo works as it should, but this doesn't actually fix repeat in the
-    " case due to the need for cursor movements (left, up, esc)
-    let result = s:RepeatFixupFlush('<cr>')
-    let lefts = ""
-    let index = 0
-    while index < len(result)
-      let lefts .= "\<left>"
-      let index += 1
-    endwhile
-
-    return result . lefts . (a:cr ? "\<cr>" : "") . "\<esc>\<up>o"
+    " ensures that the indenting is handled by the ft indent script, but
+    " breaks redo.
+    return result . "\<esc>\<up>o"
   endif
 
-  " only return a cr if nothing else is mapped to it since we don't want
-  " to duplicate a cr returned by another mapping.
-  return a:cr ? "\<cr>" : ""
+  return result
 endfunction " }}}
 
 function! s:GetStartChar(end) " {{{

@@ -252,6 +252,16 @@ function TestUndo() " {{{
 "  call vunit#AssertEquals(getline(2), '#last line', 'Wrong last line after undo.')
 endfunction " }}}
 
+function TestParenUndo() " {{{
+  exec "normal i(\<cr>\<esc>"
+  call vunit#AssertEquals(line('$'), 2, 'Wrong line numbers pre undo.')
+  call vunit#AssertEquals(getline(1), "(", 'Wrong pre undo line 1.')
+  call vunit#AssertEquals(getline(2), ")", 'Wrong pre undo line 2.')
+  undo
+  call vunit#AssertEquals(line('$'), 1, 'Wrong line numbers after undo.')
+  call vunit#AssertEquals(getline(1), "", 'Wrong after undo line 1.')
+endfunction " }}}
+
 function TestExpandCr() " {{{
   set ft=python
   let indent = ''
