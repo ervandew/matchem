@@ -44,6 +44,12 @@ if v:version < 700
   finish
 endif
 
+runtime plugin/delimitMate.vim
+if exists(':DelimitMate')
+  echom 'warn: delimitMate detected, disabling matchem.'
+  finish
+endif
+
 let s:save_cpo=&cpo
 set cpo&vim
 
