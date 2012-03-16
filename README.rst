@@ -37,7 +37,7 @@
 Overview
 ==================
 
-MatchEm is a vim plugin which auto adds closing quotes, parens, bracket,
+MatchEm is a vim plugin which auto adds closing quotes, parens, brackets,
 curlies and other such characters as you type.  Using matchem doesn't involve
 any change of behavior on your part. Simple type your code as you normally
 would and matchem will handle auto adding closing quotes, etc as necessary and
