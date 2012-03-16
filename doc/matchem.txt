@@ -1,0 +1,75 @@
+*matchem.txt*
+
+-----------------------------------------------------------------------------
+MatchEm                                          *matchem*
+
+  Overview                           |matchem-overview|
+  Configuration                      |matchem-configuration|
+
+-----------------------------------------------------------------------------
+Overview                                         *matchem-overview*
+
+MatchEm is a vim plugin which auto adds closing quotes, parens, bracket,
+curlies and other such characters as you type.  Using matchem doesn't involve
+any change of behavior on your part. Simple type your code as you normally
+would and matchem will handle auto adding closing quotes, etc as necessary and
+overwriting them accordingly if you continue to manually type the closing
+character.
+
+While auto adding closing character seems like a simple feature, in practice
+there are a lot of edge cases and matchem aims to clear address as many of
+those as possible (and provide the means to inject your own edge case
+handlers) so that you aren't interrupting your flow by correcting mistakes
+made by the matcher.
+
+Note: some of the matchem's edge case handling relies on vim's syntax
+highlighting being enabled. If syntax highlighting is disabled, matchem will
+degrade gracefully but may not handle some edge case.
+
+-----------------------------------------------------------------------------
+Configuration                                    *matchem-configuration*
+
+  |matchpairs|
+
+  To decide what characters to auto match, matchem uses vim's existing
+  |matchpairs| option.
+
+  *g:MatchemRepeatFixup* Default: 1
+
+  When non-0 matchem will map each character found in the
+  g:MatchemUndoBreakChars list in order to properly flush auto matched
+  delimiters to keep vim's undo and repeat functionality happy. You probably
+  wouldn't want to ever disable this setting.
+
+  *g:MatchemExpandCr*  Default: 1
+
+  When non-0 matchem will map <cr> in insert mode to auto add a blank line at
+  the proper indentation level between open and close delimiters specified by 
+  |g:MatchemExpandCrEndChars|.
+
+  *g:MatchemExpandCrEndChars* Default: ['}', ']']
+
+  List of end characters which when a preceding <cr> is typed will trigger
+  matchem's exand cr support. Note that this variable can also be set at the
+  buffer level using b:MatchemExpandCrEndChars.
+
+  *g:MatchemMaxMatchSearchDepth* Default: 100
+
+  When typing a closing delimiter (paren, bracket, curly) where that delimiter
+  already exists after the cursor, matchem will walk up the file look at
+  corresponding open delimiters to determine whether that delimiter should be
+  inserted or whether the existing delimiter should be overwritten. This
+  variable determines the maximum number of open delimiters to visit when
+  determining the proper behavior.
+
+  *g:MatchemEdgeCases* Default: <dictionary of built in edge case handlers>
+
+  This setting provides a dictionary of file type key ('*' to indicate all
+  file types) to a list of function names which will be invoked to handle file
+  type specific edge cases. By default matchem provides some edge case
+  handlers for perl, python, sh, vim, and html/php files, but you can create
+  and add your own (look at the existing functions to get an idea of how they
+  are written). You can also set this variable at the buffer level using
+  b:MatchemEdgeCases.
+
+vim:tw=78:ft=help:norl:
