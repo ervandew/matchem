@@ -2,3 +2,4 @@
 *.vmb
 tags
 /build
+/README.html
