@@ -33,6 +33,10 @@ function TestQuote() " {{{
 endfunction " }}}
 
 function TestParenBracketCurly() " {{{
+  exec "normal i[\<esc>"
+  call vunit#AssertEquals(getline('.'), '[]', 'Bracket <esc> failed.')
+  1,$delete _
+
   normal i(
   call vunit#AssertEquals(getline('.'), '()', 'Paren failed.')
   1,$delete _

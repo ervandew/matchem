@@ -59,6 +59,10 @@ if !exists('g:MatchemRepeatFixup')
   let g:MatchemRepeatFixup = 1
 endif
 
+if !exists('g:MatchemSemicolnMapping')
+  let g:MatchemSemicolnMapping = 0
+endif
+
 if !exists('g:MatchemExpandCr')
   let g:MatchemExpandCr = 1
 endif
@@ -113,8 +117,57 @@ function! s:Init() " {{{
     endif
   endif
 
+  if g:MatchemSemicolnMapping && maparg(';', 'i') == ''
+    inoremap <expr> ; <SID>EndSemicolon()
+    function s:EndSemicolon()
+      " file type where semicolon is used as a line ending, jump to the end of
+      " the line and add the semicolon when appropriate
+      if &ft =~ '^\(c\(pp\|s\)?\|java\|javascript\|perl\|php\)$'
+        " if cursor is already at the end of the line, don't prevent the user
+        " from manually adding a ; (for cases that the logic below gets wrong)
+        if col('.') == col('$')
+          return ';'
+        endif
+
+        let line = getline('.')
+        if line =~ '^\s*for\>'
+          return ';'
+        endif
+
+        call feedkeys("\<END>")
+
+        let start = 1
+        while line[start - 1] =~ '\s'
+          let start += 1
+        endwhile
+        let syntax = synIDattr(synIDtrans(synID(line('.'), start, 1)), 'name')
+        if line =~ '^\s*\(return\|my\)\>'
+          let syntax = ''
+        endif
+        if line !~ ';\s*$' && syntax !~ 'Conditional\|PreProc\|Statement\|Type'
+          call feedkeys(';', 'n')
+        endif
+
+        return ''
+      endif
+
+      " all other file types
+      return ';'
+    endfunction
+  endif
+
   if g:MatchemExpandCr
-    if maparg('<CR>','i') =~ '<CR>'
+    let expr_map = 0
+    try
+      let map_dict = maparg('<cr>', 'i', 0, 1)
+      let expr_map = map_dict.expr
+    catch
+      " ignore
+    endtry
+
+    if expr_map
+      " Not compatible w/ expr mappings.
+    elseif maparg('<CR>','i') =~ '<CR>'
       let map = maparg('<cr>', 'i')
       let cr = (map =~? '\(^\|[^)]\)<cr>')
       if map =~ '<Plug>'
@@ -435,7 +488,7 @@ function! s:RepeatFixupFlush(char) " {{{
     let line = getline('.')
     let col = col('.')
     let start = max([col - 2, 0])
-    if start > 0 || a:char == '<cr>'
+    if start >= 0 || a:char == '<cr>'
       let pre = line[:start]
     else
       let pre = ''
