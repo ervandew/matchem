@@ -455,16 +455,6 @@ function! s:MatchRemove(char) " {{{
         call setline('.', line[:col - 1] . line[col + 1:])
         return ''
       endif
-
-   " the match character wasn't added by us, but for <bs> we still may want to
-   " remove it.
-    elseif a:char == "\<bs>"
-      " edge case where vim settings don't allow backspacing over the start
-      " of insert
-      if &backspace != 2
-        return ''
-      endif
-      let result .= "\<del>"
     endif
   elseif match != '' && line[col - 2] == match
     call s:RepeatFixupDequeue(match)

@@ -159,21 +159,6 @@ function TestDelete() " {{{
   call vunit#AssertEquals(getline('.'), 'foo = ', 'Insert + backspace failed.')
   1,$delete _
 
-  " with &backspace not set
-  call setline('.', "foo = ''")
-  call cursor(1, 8)
-  exec "normal i\<bs>"
-  call vunit#AssertEquals(getline('.'), "foo = ''", 'Backspace should have no-op.')
-  1,$delete _
-
-  " with &backspace set
-  set backspace=2
-  call setline('.', "foo = ''")
-  call cursor(1, 8)
-  exec "normal i\<bs>"
-  call vunit#AssertEquals(getline('.'), "foo = ", 'Backspace failed.')
-  1,$delete _
-
   call setline('.', "foo = ''")
   call cursor(1, 8)
   exec "normal i\<del>"
