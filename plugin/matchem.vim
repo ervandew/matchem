@@ -123,13 +123,22 @@ function! s:Init() " {{{
       " file type where semicolon is used as a line ending, jump to the end of
       " the line and add the semicolon when appropriate
       if &ft =~ '^\(c\(pp\|s\)?\|java\|javascript\|perl\|php\)$'
+        let col = col('.')
+        let line = getline('.')
+
+        " if the next char is not a closing delim or it is but wasn't auto
+        " added, then don't prevent the user from manually adding the ';' at
+        " the current position.
+        if !s:RepeatFixupPeek(line[col - 1])
+          return ';'
+        endif
+
         " if cursor is already at the end of the line, don't prevent the user
-        " from manually adding a ; (for cases that the logic below gets wrong)
+        " from manually adding a ; (for cases that the logic below gets it wrong)
         if col('.') == col('$')
           return ';'
         endif
 
-        let line = getline('.')
         if line =~ '^\s*for\>'
           return ';'
         endif
