@@ -294,6 +294,12 @@ function! s:MatchStart() " {{{
        \ next_char !~ '[[:space:];:.,' . escape(join(end_chars, ''), ']') . ']'
     let result = ''
 
+  " open paren being added in front of an open paren, don't auto close since
+  " this is a common case where a user may just want to wrap another
+  " expression in parens.
+  elseif char == '(' && next_char == '('
+    let result = ''
+
   " starting delimiter in front of a closing one, and the closing one has its
   " starting counterpart in a string, so don't auto close
   elseif next_char =~ '[' . escape(join(end_chars, ''), ']') . ']' &&

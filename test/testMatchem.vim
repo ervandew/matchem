@@ -145,6 +145,13 @@ function TestAddParens() " {{{
   call vunit#AssertEquals(
     \ getline('.'), 'foo = ("bar", ("baz"))', 'Wrong new close paren overwrite.')
   1,$delete _
+
+  call setline('.', 'foo = ("bar", "baz")')
+  call cursor(1, 7)
+  exec "normal i(\<esc>"
+  call vunit#AssertEquals(
+    \ getline('.'), 'foo = (("bar", "baz")', 'Wrong leading open paren.')
+  1,$delete _
 endfunction " }}}
 
 function TestDelete() " {{{
