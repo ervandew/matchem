@@ -59,8 +59,8 @@ if !exists('g:MatchemRepeatFixup')
   let g:MatchemRepeatFixup = 1
 endif
 
-if !exists('g:MatchemSemicolnMapping')
-  let g:MatchemSemicolnMapping = 0
+if !exists('g:MatchemSemicolonMapping')
+  let g:MatchemSemicolonMapping = 0
 endif
 
 if !exists('g:MatchemExpandCr')
@@ -117,12 +117,12 @@ function! s:Init() " {{{
     endif
   endif
 
-  if g:MatchemSemicolnMapping && maparg(';', 'i') == ''
+  if g:MatchemSemicolonMapping && maparg(';', 'i') == ''
     inoremap <expr> ; <SID>EndSemicolon()
     function s:EndSemicolon()
       " file type where semicolon is used as a line ending, jump to the end of
       " the line and add the semicolon when appropriate
-      if &ft =~ '^\(c\(pp\|s\)?\|java\|javascript\|perl\|php\)$'
+      if &ft =~ '^\(c\(pp\|s\)?\|html.*\|java\|javascript\|perl\|php\)$'
         let col = col('.')
         let line = getline('.')
 
