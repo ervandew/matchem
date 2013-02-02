@@ -59,8 +59,8 @@ if !exists('g:MatchemRepeatFixup')
   let g:MatchemRepeatFixup = 1
 endif
 
-if !exists('g:MatchemSemicolonMapping')
-  let g:MatchemSemicolonMapping = 0
+if !exists('g:MatchemEndOfLineMapping')
+  let g:MatchemEndOfLineMapping = 0
 endif
 
 if !exists('g:MatchemExpandCr')
@@ -117,54 +117,6 @@ function! s:Init() " {{{
     endif
   endif
 
-  if g:MatchemSemicolonMapping && maparg(';', 'i') == ''
-    inoremap <expr> ; <SID>EndSemicolon()
-    function s:EndSemicolon()
-      " file type where semicolon is used as a line ending, jump to the end of
-      " the line and add the semicolon when appropriate
-      if &ft =~ '^\(c\(pp\|s\)?\|html.*\|java\|javascript\|perl\|php\)$'
-        let col = col('.')
-        let line = getline('.')
-
-        " if the next char is not a closing delim or it is but wasn't auto
-        " added, then don't prevent the user from manually adding the ';' at
-        " the current position.
-        if !s:RepeatFixupPeek(line[col - 1])
-          return ';'
-        endif
-
-        " if cursor is already at the end of the line, don't prevent the user
-        " from manually adding a ; (for cases that the logic below gets it wrong)
-        if col('.') == col('$')
-          return ';'
-        endif
-
-        if line =~ '^\s*for\>'
-          return ';'
-        endif
-
-        call feedkeys("\<END>")
-
-        let start = 1
-        while line[start - 1] =~ '\s'
-          let start += 1
-        endwhile
-        let syntax = synIDattr(synIDtrans(synID(line('.'), start, 1)), 'name')
-        if line =~ '^\s*\(return\|my\)\>'
-          let syntax = ''
-        endif
-        if line !~ ';\s*$' && syntax !~ 'Conditional\|PreProc\|Statement\|Type'
-          call feedkeys(';', 'n')
-        endif
-
-        return ''
-      endif
-
-      " all other file types
-      return ';'
-    endfunction
-  endif
-
   if g:MatchemExpandCr
     let expr_map = 0
     try
@@ -217,6 +169,28 @@ function! s:InitBuffer() " {{{
       exec printf('inoremap <silent> <buffer> %s <c-r>=<SID>MatchEnd("%s")<cr>', end, end)
     endif
   endfor
+
+  if g:MatchemEndOfLineMapping
+    " add file type based mappings to characters that typically occur at the
+    " end of a line to jump to the end of the line and add the character when
+    " appropriate
+
+    " open curly and semicoln for langs with c like syntax
+    if &ft =~ '^\(c\(pp\|s\)\?\|html.*\|java\|javascript\|perl\|php\)$'
+      if maparg(';', 'i') == ''
+        inoremap <buffer> <expr> ; <SID>EndOfLine(';')
+      endif
+      if maparg('{', 'i') == '' || maparg('{', 'i') =~ '_MatchStart()'
+        imap <buffer> <expr> { <SID>EndOfLine('{')
+      endif
+
+    " colon for python
+    elseif &ft == 'python'
+      if maparg(':', 'i') == ''
+        inoremap <buffer> <expr> : <SID>EndOfLine(':')
+      endif
+    endif
+  endif
 endfunction " }}}
 
 function! s:MatchStart() " {{{
@@ -513,6 +487,67 @@ function! s:RepeatFixupFlush(char) " {{{
   return result
 endfunction " }}}
 
+function! s:EndOfLine(char) " {{{
+  let col = col('.')
+  let line = getline('.')
+
+  " if we are in a string/comment, error on the side of assuming the user
+  " wants to input the character at the current cursor position.
+  let syntax_id = synID(line('.'), col, 1)
+  let syntax_base = synIDattr(synIDtrans(syntax_id), 'name')
+  let syntax_name = synIDattr(syntax_id, 'name')
+  if syntax_base =~ 'String\|Comment' || syntax_name =~ 'javaCharacter'
+    return a:char
+  endif
+
+  " if the next char is not a closing delim or it is but wasn't auto
+  " added, then don't prevent the user from manually adding the char at
+  " the current position.
+  if !s:RepeatFixupPeek(line[col - 1])
+    if has_key(b:matchempairs, a:char)
+      call feedkeys(a:char . "\<c-r>=<SNR>" . s:SID() . "_MatchStart()\<cr>", 'n')
+      return ''
+    endif
+    return a:char
+  endif
+
+  " if cursor is already at the end of the line, don't prevent the user
+  " from manually adding the char (for cases that the logic below gets
+  " it wrong)
+  if col('.') == col('$')
+    if has_key(b:matchempairs, a:char)
+      call feedkeys(a:char . "\<c-r>=<SNR>" . s:SID() . "_MatchStart()\<cr>", 'n')
+      return ''
+    endif
+    return a:char
+  endif
+
+  " edge case for ; and 'for' loops
+  if a:char == ';' && line =~ '^\s*for\>'
+    return a:char
+  endif
+
+  call feedkeys("\<END>")
+
+  let start = 1
+  while line[start - 1] =~ '\s'
+    let start += 1
+  endwhile
+  "let start_syntax = synIDattr(synIDtrans(synID(line('.'), start, 1)), 'name')
+  "if line =~ '^\s*\(return\|my\)\>'
+  "  let start_syntax = ''
+  "endif
+  if line !~ a:char . '\s*$' "&& start_syntax !~ 'Conditional\|PreProc\|Statement\|Type'
+    if has_key(b:matchempairs, a:char)
+      call feedkeys(a:char . "\<c-r>=<SNR>" . s:SID() . "_MatchStart()\<cr>", 'n')
+    else
+      call feedkeys(a:char, 'n')
+    endif
+  endif
+
+  return ''
+endfunction " }}}
+
 function! s:ExpandCr(cr) " {{{
   if &paste
     return ''
@@ -603,6 +638,10 @@ function! s:SearchPair(col, start, end, count, skip_string) " {{{
     let result = Search(start, '', end, flags, skip, line('.'))
   endif
   return a:count ? result : result[1]
+endfunction " }}}
+
+function! s:SID() "{{{
+  return matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze_SID$')
 endfunction " }}}
 
 function! s:VimCommentStart(col, line, char) " {{{
