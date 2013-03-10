@@ -6,7 +6,7 @@
 " }}}
 "
 " License: {{{
-"   Copyright (c) 2010 - 2012, Eric Van Dewoestine
+"   Copyright (c) 2010 - 2013, Eric Van Dewoestine
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -490,6 +490,7 @@ endfunction " }}}
 function! s:EndOfLine(char) " {{{
   let col = col('.')
   let line = getline('.')
+  let end = line[col - 1]
 
   " if we are in a string/comment, error on the side of assuming the user
   " wants to input the character at the current cursor position.
@@ -503,7 +504,7 @@ function! s:EndOfLine(char) " {{{
   " if the next char is not a closing delim or it is but wasn't auto
   " added, then don't prevent the user from manually adding the char at
   " the current position.
-  if !s:RepeatFixupPeek(line[col - 1])
+  if !s:RepeatFixupPeek(end)
     if has_key(b:matchempairs, a:char)
       call feedkeys(a:char . "\<c-r>=<SNR>" . s:SID() . "_MatchStart()\<cr>", 'n')
       return ''
@@ -524,6 +525,11 @@ function! s:EndOfLine(char) " {{{
 
   " edge case for ; and 'for' loops
   if a:char == ';' && line =~ '^\s*for\>'
+    return a:char
+  endif
+
+  " edge case for : in python w/ dicts and list slicing
+  if a:char == ':' && &ft == 'python' && end =~ '[}\]]'
     return a:char
   endif
 
