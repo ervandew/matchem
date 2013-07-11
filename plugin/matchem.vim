@@ -136,7 +136,14 @@ function! s:Init() " {{{
         let plug_map = maparg(plug, 'i')
         let map = substitute(map, '.\{-}\(<Plug>\w\+\).*', plug_map, '')
       endif
-      exec "inoremap <script> <cr> <c-r>=<SID>ExpandCr(" . cr . ")<cr>" . map
+      let funcmap = '^<C-R>=\(\%\(<SNR>\)\?\w\+\)(\(.\{-}\))<CR>$'
+      if map =~? funcmap
+        let s:CrFunc = substitute(map, funcmap, '\1', '')
+        let s:CrFuncArgs = substitute(map, funcmap, '\2', '')
+        inoremap <silent> <cr> <c-r>=<SID>ExpandCr(1)<cr>
+      else
+        exec "inoremap <script> <cr> <c-r>=<SID>ExpandCr(" . cr . ")<cr>" . map
+      endif
     else
       inoremap <silent> <cr> <c-r>=<SID>ExpandCr(1)<cr>
     endif
@@ -555,13 +562,18 @@ function! s:EndOfLine(char) " {{{
 endfunction " }}}
 
 function! s:ExpandCr(cr) " {{{
+  let CrFuncResult = ''
+  if exists('s:CrFunc')
+    exec 'let CrFuncResult = function(s:CrFunc)(' . s:CrFuncArgs . ')'
+  endif
+
   if &paste
     return ''
   endif
 
   " don't get in the way of code completion mappings
   if pumvisible()
-    return ''
+    return CrFuncResult
   endif
 
   " hack to cooperate with supertab
@@ -591,22 +603,23 @@ function! s:ExpandCr(cr) " {{{
   endwhile
   let result .= lefts
 
-  " only return a cr if nothing else is mapped to it since we don't want
-  " to duplicate a cr returned by another mapping.
-  let result .= (a:cr ? "\<cr>" : "")
-
   let char = line[col - 1]
   let prev = len(line) >= (col - 2) ? line[col - 2] : ''
   if index(b:MatchemExpandCrEndChars, char) != -1 &&
    \ index(values(b:matchempairs), char) != -1 &&
    \ prev == s:GetStartChar(char)
 
+    " only return a cr if nothing else is mapped to it since we don't want
+    " to duplicate a cr returned by another mapping.
+    let result .= (a:cr ? "\<cr>" : "")
+
     " ensures that the indenting is handled by the ft indent script, but
     " breaks redo.
     return result . "\<esc>\<up>o"
   endif
 
-  return result
+  let result .= ((a:cr && CrFuncResult !~ "\<cr>") ? "\<cr>" : "")
+  return result . CrFuncResult
 endfunction " }}}
 
 function! s:GetStartChar(end) " {{{
