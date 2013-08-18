@@ -257,7 +257,7 @@ function! s:MatchStart() " {{{
     if s:RepeatFixupDequeue(char)
       " delete the character without polluting the repeat register
       let line = len(line) > 2 ? line[:col - 2] . line[col + 0:] : line[0]
-      call setline('.', line)
+      call s:SetLine('.', line)
     else
       let result = "\<del>"
     endif
@@ -317,7 +317,7 @@ function! s:MatchStart() " {{{
   else
     let line = getline('.')
     let col = col('.')
-    call setline('.', line[:col - 2] . match . line[col - 1:])
+    call s:SetLine('.', line[:col - 2] . match . line[col - 1:])
     call s:RepeatFixupQueue(match)
   endif
 
@@ -346,7 +346,7 @@ function! s:MatchEnd(char) " {{{
   " if we've added the end character, then overwrite it.
   if s:RepeatFixupPeek(end)
     call s:RepeatFixupDequeue(end)
-    call setline('.', line[:col - 2] . line[col + 0:])
+    call s:SetLine('.', line[:col - 2] . line[col + 0:])
     let result = a:char
 
   else
@@ -372,7 +372,7 @@ function! s:MatchEnd(char) " {{{
     else
       " we auto added the end char, so dequeue it and return the user entered one
       if s:RepeatFixupDequeue(end)
-        call setline('.', line[:col - 2] . line[col + 0:])
+        call s:SetLine('.', line[:col - 2] . line[col + 0:])
         let result = a:char
 
       else
@@ -426,14 +426,14 @@ function! s:MatchRemove(char) " {{{
       " delete the auto matched character w/out polluting the repeat register
       if a:char == "\<bs>"
         if len(line) == 2
-          call setline('.', ' ')
+          call s:SetLine('.', ' ')
         else
-          call setline('.', line[:col - 2] . line[col + 0:])
+          call s:SetLine('.', line[:col - 2] . line[col + 0:])
         endif
 
       " <del>, just remove the auto added end char.
       else
-        call setline('.', line[:col - 1] . line[col + 1:])
+        call s:SetLine('.', line[:col - 1] . line[col + 1:])
         return ''
       endif
     endif
@@ -479,7 +479,7 @@ function! s:RepeatFixupFlush(char) " {{{
     else
       let pre = ''
     endif
-    call setline('.', pre . line[col + len(result) - 1:])
+    call s:SetLine('.', pre . line[col + len(result) - 1:])
 
     " make sure the cursor ends up where the user expects it to when leaving
     " insert mode.
@@ -562,6 +562,8 @@ function! s:EndOfLine(char) " {{{
 endfunction " }}}
 
 function! s:ExpandCr(cr) " {{{
+  silent! undojoin
+
   let CrFuncResult = ''
   if exists('s:CrFunc')
     exec 'let CrFuncResult = function(s:CrFunc)(' . s:CrFuncArgs . ')'
@@ -659,6 +661,11 @@ function! s:SearchPair(col, start, end, count, skip_string) " {{{
   return a:count ? result : result[1]
 endfunction " }}}
 
+function! s:SetLine(lnum, line) " {{{
+  silent! undojoin
+  call setline(a:lnum, a:line)
+endfunction " }}}
+
 function! s:SID() "{{{
   return matchstr(expand('<sfile>'), '<SNR>\zs\d\+\ze_SID$')
 endfunction " }}}
@@ -671,7 +678,7 @@ function! s:VimCommentStart(col, line, char) " {{{
     let restore = 0
     if a:line =~ '"$'
       let restore = 1
-      call setline('.', a:line . ' ')
+      call s:SetLine('.', a:line . ' ')
       redraw
     endif
     let syntax_here = synIDattr(synID(line('.'), a:col, 1), 'name')
@@ -682,7 +689,7 @@ function! s:VimCommentStart(col, line, char) " {{{
       let syntax_prev = synIDattr(synID(line('.'), a:col - 1, 1), 'name')
     endif
     if restore
-      call setline('.', a:line)
+      call s:SetLine('.', a:line)
     endif
     if syntax_here =~? 'Comment' && (
           \ (syntax_prev !~? 'Comment' && syntax_prev != 'vimOper') ||
@@ -701,7 +708,7 @@ function! s:PythonTripleQuote(col, line, char) " {{{
         " handle case where second quote added the third, then user typed the
         " third, so we need to eat the one auto added.
         if s:RepeatFixupDequeue(a:char)
-          call setline('.', a:line[:a:col - 2] . a:line[a:col + 0:])
+          call s:SetLine('.', a:line[:a:col - 2] . a:line[a:col + 0:])
         endif
       endif
       return [1, '']

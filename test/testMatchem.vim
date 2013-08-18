@@ -224,28 +224,25 @@ function TestUndo() " {{{
   call vunit#AssertEquals(getline(2), '#last line', 'Wrong last line after undo.')
   1,$ delete _
 
-  " For some reason this fails. Something about the third+ set of match
-  " completions is tripping up vim's undo logic. DelimitMate suffers from the
-  " same issue (tested w/ vim 7.3.69).
-"  call setline('.', '#first line')
-"  call append(1, '#last line')
-"  exec "normal i\<c-g>u"
-"  exec "normal ofoo = 'foo'\<cr>bar = 'bar'\<cr>baz = 'baz\<esc>"
-"  call vunit#AssertEquals(getline(1), "#first line", 'Wrong line 1.')
-"  call vunit#AssertEquals(getline(2), "foo = 'foo'", 'Wrong line 2.')
-"  call vunit#AssertEquals(getline(3), "bar = 'bar'", 'Wrong line 3.')
-"  call vunit#AssertEquals(getline(4), "baz = 'baz'", 'Wrong line 4.')
-"  call vunit#AssertEquals(getline(5), "#last line", 'Wrong line 5.')
+  call setline('.', '#first line')
+  call append(1, '#last line')
+  exec "normal i\<c-g>u"
+  exec "normal ofoo = 'foo'\<cr>bar = 'bar'\<cr>baz = 'baz\<esc>"
+  call vunit#AssertEquals(getline(1), "#first line", 'Wrong line 1.')
+  call vunit#AssertEquals(getline(2), "foo = 'foo'", 'Wrong line 2.')
+  call vunit#AssertEquals(getline(3), "bar = 'bar'", 'Wrong line 3.')
+  call vunit#AssertEquals(getline(4), "baz = 'baz'", 'Wrong line 4.')
+  call vunit#AssertEquals(getline(5), "#last line", 'Wrong line 5.')
 
-"  undo
-"  let l = 1
-"  while l <= line('$')
-"    echom '## line: ' . l . ' |' . getline(l) . '|'
-"    let l += 1
-"  endwhile
-"  call vunit#AssertEquals(line('$'), 2, 'Wrong line numbers after undo.')
-"  call vunit#AssertEquals(getline(1), '#first line', 'Wrong first line after undo.')
-"  call vunit#AssertEquals(getline(2), '#last line', 'Wrong last line after undo.')
+  undo
+  let l = 1
+  while l <= line('$')
+    echom '## line: ' . l . ' |' . getline(l) . '|'
+    let l += 1
+  endwhile
+  call vunit#AssertEquals(line('$'), 2, 'Wrong line numbers after undo.')
+  call vunit#AssertEquals(getline(1), '#first line', 'Wrong first line after undo.')
+  call vunit#AssertEquals(getline(2), '#last line', 'Wrong last line after undo.')
 endfunction " }}}
 
 function TestParenUndo() " {{{
