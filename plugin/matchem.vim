@@ -76,11 +76,14 @@ if !exists('g:MatchemMaxMatchSearchDepth')
 endif
 
 let g:MatchemEdgeCases = {
+    \ 'html': ['s:HtmlJsLessThan'],
+    \ 'htmldjango': ['s:HtmlTemplateBrace', 's:HtmlJsLessThan'],
+    \ 'htmljinja': ['s:HtmlTemplateBrace', 's:HtmlJsLessThan'],
     \ 'perl': ['s:PerlBackTick'],
+    \ 'php': ['s:HtmlJsLessThan'],
     \ 'python': ['s:PythonTripleQuote'],
     \ 'sh': ['s:ShQuote'],
     \ 'vim': ['s:VimCommentStart'],
-    \ '*': ['s:HtmlJsLessThan'],
   \ }
 
 let g:MatchemUndoBreakChars = [
@@ -231,7 +234,14 @@ function! s:MatchStart() " {{{
       let Edge = function(edge)
       let [edge_status, edge_result] = Edge(col, line, char)
       if edge_status
-        return edge_result
+        if edge_result != ''
+          let col = col('.')
+          call s:SetLine('.', line[:col - 2] . edge_result . line[col - 1:])
+          for char in split('}}', '.\zs')
+            call s:RepeatFixupQueue(char)
+          endfor
+        endif
+        return ''
       endif
     catch /E700/
       echohl Error
@@ -726,7 +736,7 @@ function! s:PerlBackTick(col, line, char) " {{{
 endfunction " }}}
 
 function! s:HtmlJsLessThan(col, line, char) " {{{
-  if a:char == '<' && (&ft =~ 'html' || &ft == 'php')
+  if a:char == '<'
     let script_start = search('<script\>', 'bnW')
     let script_end = search('</script\>', 'bnW')
     if script_start && script_start > script_end
@@ -734,6 +744,20 @@ function! s:HtmlJsLessThan(col, line, char) " {{{
     endif
   endif
   return [0, '']
+endfunction " }}}
+
+function! s:HtmlTemplateBrace(col, line, char) " {{{
+  if a:char == '{'
+    let script_start = search('<script\>', 'bnW')
+    let script_end = search('</script\>', 'bnW')
+    if script_start && script_start > script_end
+      return [0, '']
+    endif
+  endif
+  if a:line =~ '\(^\|[^{]\){{\%' . (a:col + 1) . 'c'
+    return [1, '}}']
+  endif
+  return [1, '']
 endfunction " }}}
 
 function! s:ShQuote(col, line, char) " {{{
