@@ -284,6 +284,27 @@ function TestExpandCr() " {{{
   call vunit#AssertEquals(getline(3), '}', 'Curly insert <cr> failed, line 3.')
 endfunction " }}}
 
+function TestSkipMappings() " {{{
+  set ft=python
+
+  exec "normal il = [(\<esc>"
+  call vunit#AssertEquals(getline(1), 'l = [()]', 'Initial insert failed.')
+  call vunit#AssertEquals(col('.'), 6, 'Wrong initial cursor position.')
+  1,$delete _
+
+  imap <c-e> <Plug>MatchemSkipNext
+  exec "normal il = [(\<c-e>\<esc>"
+  call vunit#AssertEquals(getline(1), 'l = [()]', 'Skip next insert failed.')
+  call vunit#AssertEquals(col('.'), 7, 'Wrong skip next cursor position.')
+  1,$delete _
+
+  imap <c-y> <Plug>MatchemSkipAll
+  exec "normal il = [(\<c-y>\<esc>"
+  call vunit#AssertEquals(getline(1), 'l = [()]', 'Skip all insert failed.')
+  call vunit#AssertEquals(col('.'), 8, 'Wrong skip all cursor position.')
+  1,$delete _
+endfunction " }}}
+
 function TestNestedParenEdgeCase() " {{{
   set ft=python
   call setline(1, 'foo(bar=[])')

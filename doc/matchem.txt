@@ -5,6 +5,7 @@ MatchEm                                          *matchem*
 
   Overview                           |matchem-overview|
   Configuration                      |matchem-configuration|
+  Mappings                           |matchem-mappings|
 
 -----------------------------------------------------------------------------
 Overview                                         *matchem-overview*
@@ -71,5 +72,24 @@ Configuration                                    *matchem-configuration*
   and add your own (look at the existing functions to get an idea of how they
   are written). You can also set this variable at the buffer level using
   b:MatchemEdgeCases.
+
+-----------------------------------------------------------------------------
+Mappings                                         *matchem-mappings*
+
+  Matchem provides two |<Plug>| mappings which you can map to key bindings of
+  your choice:
+
+  *<Plug>MatchemSkipNext* While in insert mode, this will move the cursor past
+  the next matchem added delimiter which follows the current cursor position.
+
+  *<Plug>MatchemSkipAll* While in insert mode, this mapping will move the
+  cursor over all consecutive matchem added delimiters following the current
+  cursor position.
+
+  Here is an example of how you can map these in your vimrc or similar:
+  >
+    imap <c-e> <Plug>MatchemSkipNext
+    imap <c-y> <Plug>MatchemSkipAll
+<
 
 vim:tw=78:ft=help:norl:

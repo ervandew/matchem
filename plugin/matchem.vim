@@ -6,7 +6,7 @@
 " }}}
 "
 " License: {{{
-"   Copyright (c) 2010 - 2013, Eric Van Dewoestine
+"   Copyright (c) 2010 - 2014, Eric Van Dewoestine
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -103,6 +103,9 @@ function! s:Init() " {{{
 
   inoremap <silent> <bs> <c-r>=<SID>MatchRemove("\<lt>bs>")<cr>
   inoremap <silent> <del> <c-r>=<SID>MatchRemove("\<lt>del>")<cr>
+
+  imap <script> <Plug>MatchemSkipNext <c-r>=<SID>Skip(1)<cr>
+  imap <script> <Plug>MatchemSkipAll <c-r>=<SID>Skip(0)<cr>
 
   if g:MatchemRepeatFixup
     " hack and a half to get working undo/repeat support
@@ -643,6 +646,25 @@ function! s:GetStartChar(end) " {{{
     endif
   endfor
   return start
+endfunction " }}}
+
+function! s:Skip(count) " {{{
+  let result = ''
+  let num = a:count
+  let char = getline('.')[col('.') - 1]
+  let num = a:count
+  while s:RepeatFixupPeek(char) && (a:count == 0 || num > 0)
+    let col = col('.')
+    let line = getline('.')
+    if s:RepeatFixupPeek(char)
+      call s:RepeatFixupDequeue(char)
+      call s:SetLine('.', line[:col - 2] . line[col + 0:])
+      let result .= char
+    endif
+    let char = getline('.')[col('.') - 1]
+    let num -=1
+  endwhile
+  return result
 endfunction " }}}
 
 function! s:SearchPair(col, start, end, count, skip_string) " {{{
