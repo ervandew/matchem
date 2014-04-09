@@ -83,7 +83,7 @@ let g:MatchemEdgeCases = {
     \ 'php': ['s:HtmlJsLessThan'],
     \ 'python': ['s:PythonTripleQuote'],
     \ 'sh': ['s:ShQuote'],
-    \ 'vim': ['s:VimCommentStart'],
+    \ 'vim': ['s:VimCommentStart', 's:VimFoldStart'],
   \ }
 
 let g:MatchemUndoBreakChars = [
@@ -726,6 +726,17 @@ function! s:VimCommentStart(col, line, char) " {{{
     if syntax_here =~? 'Comment' && (
           \ (syntax_prev !~? 'Comment' && syntax_prev != 'vimOper') ||
           \ a:line =~ '^\s*\%' . (a:col - 1) . 'c')
+      return [1, '']
+    endif
+  endif
+  return [0, '']
+endfunction " }}}
+
+function! s:VimFoldStart(col, line, char) " {{{
+  " for vim files don't complete a starting fold marker in a comment
+  if a:char == &foldmarker[0]
+    let syntax = synIDattr(synID(line('.'), a:col, 1), 'name')
+    if syntax =~? 'Comment'
       return [1, '']
     endif
   endif
