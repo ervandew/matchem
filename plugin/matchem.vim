@@ -588,6 +588,10 @@ function! s:ExpandCr(cr) " {{{
 
   " don't get in the way of code completion mappings
   if pumvisible()
+    " reset for the case where matchem does run while the completion popup is
+    " still visible, alleviating the need for the b:supertab_pumwasvisible
+    " hack.
+    unlet! b:supertab_pumwasvisible
     return CrFuncResult
   endif
 
