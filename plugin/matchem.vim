@@ -75,7 +75,10 @@ if !exists('g:MatchemMaxMatchSearchDepth')
   let g:MatchemMaxMatchSearchDepth = 100
 endif
 
-let g:MatchemEdgeCases = {
+if !exists('g:MatchemEdgeCases')
+  let g:MatchemEdgeCases = {}
+endif
+let s:MatchEdgeCasesDefaults = {
     \ 'html': ['s:HtmlJsLessThan'],
     \ 'htmldjango': ['s:HtmlTemplateBrace', 's:HtmlJsLessThan'],
     \ 'htmljinja': ['s:HtmlTemplateBrace', 's:HtmlJsLessThan'],
@@ -85,13 +88,19 @@ let g:MatchemEdgeCases = {
     \ 'sh': ['s:ShQuote', 's:BashBrackets'],
     \ 'vim': ['s:VimCommentStart', 's:VimFoldStart'],
   \ }
+for [ft, cases] in items(s:MatchEdgeCasesDefaults)
+  let g:MatchemEdgeCases[ft] = cases + get(g:MatchemEdgeCases, ft, [])
+endfor
 
+if !exists('g:MatchemUndoBreakChars')
+  let g:MatchemUndoBreakChars = []
+endif
 let g:MatchemUndoBreakChars = [
     \ '<esc>', '<c-[>', '<c-c>',
     \ '<left>', '<right>', '<up>', '<down>',
     \ '<s-left>', '<s-right>', '<s-up>', '<s-down>',
     \ '<pageup>', '<pagedown>', '<home>', '<end>',
-  \ ]
+  \ ] + g:MatchemUndoBreakChars
 
 " }}}
 

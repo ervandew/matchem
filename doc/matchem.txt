@@ -42,6 +42,15 @@ Configuration                                    *matchem-configuration*
   delimiters to keep vim's undo and repeat functionality happy. You probably
   wouldn't want to ever disable this setting.
 
+  *g:MatchemUndoBreakChars* Default: <list of keys>
+
+  This setting provides the list of keys that trigger matchem's flushing of
+  auto inserted keys. If there are any keys you would like added to this list,
+  simply set this variable in your vimrc or similar to the list of additional
+  keys and matchem will append those to its default list: >
+
+    let g:MatchemUndoBreakChars = ['<...>', ...]
+<
   *g:MatchemExpandCr*  Default: 1
 
   When non-0 matchem will map <cr> in insert mode to auto add a blank line at
@@ -69,10 +78,22 @@ Configuration                                    *matchem-configuration*
   file types) to a list of function names which will be invoked to handle file
   type specific edge cases. By default matchem provides some edge case
   handlers for perl, python, sh, vim, and html/php files, but you can create
-  and add your own (look at the existing functions to get an idea of how they
-  are written). You can also set this variable at the buffer level using
-  b:MatchemEdgeCases.
+  and add your own. To do so, first create a global function using one of the
+  matchem defaults as a template. Then set the g:MatchemEdgeCases variable to
+  a dictionary where the key is the filetype the edge case is for and the
+  value is a list of function names which check for that edge case: >
 
+    let g:MatchemEdgeCases = {'python': ['MyEdgeCase']}
+<
+  Matchem will then merge your setting with the defaults.
+
+  If you would like to fully define what edge cases are used for a filetype
+  (omit the matchem defaults, etc), you can set the buffer level variable
+  b:MatchemEdgeCases to a list of edge case function names to use (in this
+  case, none of the matchem defaults would be use, only 'MyEdgeCase'): >
+
+    let b:MatchemEdgeCases = ['MyEdgeCase']
+<
 -----------------------------------------------------------------------------
 Mappings                                         *matchem-mappings*
 
