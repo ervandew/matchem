@@ -21,4 +21,21 @@ function TestShQuote() " {{{
   1,$delete _
 endfunction " }}}
 
+function TestBashBrackets() " {{{
+  " use split since vunit/vim can't fully clear the syntax
+  "set ft=sh
+  split test.sh
+  echom 'ft: ' . &ft
+
+  call setline('.', 'if [ foo ]')
+  call cursor(0, 4)
+  normal i[
+  call vunit#AssertEquals(getline('.'), 'if [[ foo ]', 'Close bracket inserted.')
+  1,$delete _
+
+  exec "normal iif [[ foo "
+  call vunit#AssertEquals(getline('.'), 'if [[ foo ]]', 'Close brackets not inserted.')
+  1,$delete _
+endfunction " }}}
+
 " vim:ft=vim:fdm=marker

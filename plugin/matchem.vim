@@ -82,7 +82,7 @@ let g:MatchemEdgeCases = {
     \ 'perl': ['s:PerlBackTick'],
     \ 'php': ['s:HtmlJsLessThan'],
     \ 'python': ['s:PythonTripleQuote'],
-    \ 'sh': ['s:ShQuote'],
+    \ 'sh': ['s:ShQuote', 's:BashBrackets'],
     \ 'vim': ['s:VimCommentStart', 's:VimFoldStart'],
   \ }
 
@@ -188,7 +188,7 @@ function! s:InitBuffer() " {{{
     " end of a line to jump to the end of the line and add the character when
     " appropriate
 
-    " open curly and semicoln for langs with c like syntax
+    " open curly and semicolon for langs with c like syntax
     if &ft =~ '^\(c\(pp\|s\)\?\|html.*\|java\|javascript\|perl\|php\)$'
       if maparg(';', 'i') == ''
         inoremap <buffer> <expr> ; <SID>EndOfLine(';')
@@ -808,6 +808,18 @@ function! s:ShQuote(col, line, char) " {{{
     return [1, '']
   endif
 
+  return [0, '']
+endfunction " }}}
+
+function! s:BashBrackets(col, line, char) " {{{
+  " for bash files, don't complete a bracket if inserted in front of another
+  " bracket (handle case of converting from sh bracketed condition to a bash
+  " enhanced version)
+  if a:char == '['
+    if a:line[a:col] == a:char
+      return [1, '']
+    endif
+  endif
   return [0, '']
 endfunction " }}}
 
