@@ -96,10 +96,12 @@ if !exists('g:MatchemUndoBreakChars')
   let g:MatchemUndoBreakChars = []
 endif
 let g:MatchemUndoBreakChars = [
-    \ '<esc>', '<c-[>', '<c-c>',
+    \ '<esc>', '<c-[>', '<c-c>', '<c-g>', '<c-o>',
     \ '<left>', '<right>', '<up>', '<down>',
+    \ '<c-left>', '<c-right>', '<c-up>', '<c-down>',
     \ '<s-left>', '<s-right>', '<s-up>', '<s-down>',
-    \ '<pageup>', '<pagedown>', '<home>', '<end>',
+    \ '<home>', '<end>', '<c-home>', '<c-end>',
+    \ '<pageup>', '<pagedown>',
   \ ] + g:MatchemUndoBreakChars
 
 " }}}
@@ -505,7 +507,7 @@ function! s:RepeatFixupFlush(char) " {{{
 
     " make sure the cursor ends up where the user expects it to when leaving
     " insert mode.
-    if a:char =~ '^\(<esc>\|<c-\[>\|<c-c>\)$'
+    if a:char =~ '^\(<esc>\|<c-\[>\|<c-c>\|<c-o>\)$'
       let num = len(result)
       while num > 0
         let result .= "\<left>"
