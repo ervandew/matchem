@@ -40,9 +40,10 @@
 "   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 " }}}
 
-if v:version < 700
+if exists('g:loaded_matchem') || v:version < 700
   finish
 endif
+let g:loaded_matchem = 1
 
 runtime plugin/delimitMate.vim
 if exists(':DelimitMate')
