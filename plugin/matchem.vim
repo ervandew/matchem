@@ -146,9 +146,9 @@ function! s:Init() " {{{
 
     if expr_map
       " Not compatible w/ expr mappings.
-    elseif maparg('<CR>','i') =~ '<CR>'
+    elseif maparg('<CR>', 'i') =~ '<CR>'
       let map = maparg('<cr>', 'i')
-      let cr = (map =~? '\(^\|[^)]\)<cr>')
+      let cr = !(map =~? '\(^\|[^)]\)<cr>')
       if map =~ '<Plug>'
         let plug = substitute(map, '.\{-}\(<Plug>\w\+\).*', '\1', '')
         let plug_map = maparg(plug, 'i')
@@ -599,7 +599,7 @@ function! s:ExpandCr(cr) " {{{
   endif
 
   " don't get in the way of code completion mappings
-  if pumvisible()
+  if pumvisible() && exists('g:SuperTabCrMapping') && g:SuperTabCrMapping
     " reset for the case where matchem does run while the completion popup is
     " still visible, alleviating the need for the b:supertab_pumwasvisible
     " hack.
@@ -639,14 +639,17 @@ function! s:ExpandCr(cr) " {{{
   if index(b:MatchemExpandCrEndChars, char) != -1 &&
    \ index(values(b:matchempairs), char) != -1 &&
    \ prev == s:GetStartChar(char)
-
-    " only return a cr if nothing else is mapped to it since we don't want
-    " to duplicate a cr returned by another mapping.
-    let result .= (a:cr ? "\<cr>" : "")
+    " Note: if an existing mapping issues a <cr> (a:cr == 0), then we can't
+    " send the below keys without introducing multiple blank lines, so we
+    " instead opt to only return our flushed keys (see above) in this case.
 
     " ensures that the indenting is handled by the ft indent script, but
     " breaks redo.
-    return result . "\<esc>\<up>o"
+    if a:cr
+      let result .= "\<cr>\<esc>\<up>o"
+    endif
+
+    return result
   endif
 
   let result .= ((a:cr && CrFuncResult !~ "\<cr>") ? "\<cr>" : "")
