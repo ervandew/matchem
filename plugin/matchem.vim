@@ -6,7 +6,7 @@
 " }}}
 "
 " License: {{{
-"   Copyright (c) 2010 - 2014, Eric Van Dewoestine
+"   Copyright (c) 2010 - 2015, Eric Van Dewoestine
 "   All rights reserved.
 "
 "   Redistribution and use of this software in source and binary forms, with
@@ -113,8 +113,8 @@ function! s:Init() " {{{
     autocmd BufEnter,FileType * call <SID>InitBuffer()
   augroup END
 
-  inoremap <silent> <bs> <c-r>=<SID>MatchRemove("\<lt>bs>")<cr>
-  inoremap <silent> <del> <c-r>=<SID>MatchRemove("\<lt>del>")<cr>
+  inoremap <silent> <bs> <c-r>=<SID>MatchBackspace("\<lt>bs>")<cr>
+  inoremap <silent> <del> <c-r>=<SID>MatchDelete("\<lt>del>")<cr>
 
   imap <script> <Plug>MatchemSkipNext <c-r>=<SID>Skip(1)<cr>
   imap <script> <Plug>MatchemSkipAll <c-r>=<SID>Skip(0)<cr>
@@ -436,12 +436,11 @@ function! s:MatchEnd(char) " {{{
   return result
 endfunction " }}}
 
-function! s:MatchRemove(char) " {{{
+function! s:MatchBackspace(char) " {{{
   if !exists('b:matchempairs')
     return a:char
   endif
 
-  let result = a:char
   let col = col('.') - 1
   let line = getline('.')
   let char = line[col - 1]
@@ -449,23 +448,27 @@ function! s:MatchRemove(char) " {{{
   if match != '' && line[col] == match
     if s:RepeatFixupDequeue(match)
       " delete the auto matched character w/out polluting the repeat register
-      if a:char == "\<bs>"
-        if len(line) == 2
-          call s:SetLine('.', ' ')
-        else
-          call s:SetLine('.', line[:col - 2] . line[col + 0:])
-        endif
-
-      " <del>, just remove the auto added end char.
+      if len(line) == 2
+        call s:SetLine('.', ' ')
       else
-        call s:SetLine('.', line[:col - 1] . line[col + 1:])
-        return ''
+        call s:SetLine('.', line[:col - 2] . line[col + 0:])
       endif
     endif
   elseif match != '' && line[col - 2] == match
     call s:RepeatFixupDequeue(match)
   endif
-  return result
+  return a:char
+endfunction " }}}
+
+function! s:MatchDelete(char) " {{{
+  if !exists('b:matchempairs')
+    return a:char
+  endif
+
+  let line = getline('.')
+  let char = line[col('.') - 1]
+  call s:RepeatFixupDequeue(char)
+  return a:char
 endfunction " }}}
 
 function! s:RepeatFixupQueue(char) " {{{

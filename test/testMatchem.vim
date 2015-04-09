@@ -169,6 +169,10 @@ function TestDelete() " {{{
   call vunit#AssertEquals(getline('.'), "foo = '", 'Insert + delete from middle failed.')
   1,$delete _
 
+  exec "normal ifoo = '1\<del>\<esc>"
+  call vunit#AssertEquals(getline('.'), "foo = '1", 'Insert + delete w/ content from middle failed.')
+  1,$delete _
+
   exec "normal i'\<bs>"
   call vunit#AssertEquals(getline('.'), "", 'Insert + baskspace from middle failed.')
   1,$delete _
