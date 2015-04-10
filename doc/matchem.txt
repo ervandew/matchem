@@ -63,6 +63,10 @@ Configuration                                    *matchem-configuration*
   matchem's exand cr support. Note that this variable can also be set at the
   buffer level using b:MatchemExpandCrEndChars.
 
+  *g:MatchemExpandNl*  Default: 1
+
+  Just like |g:MatchemExpandCr|, but applies to the <nl> (<c-j>) character.
+
   *g:MatchemMaxMatchSearchDepth* Default: 100
 
   When typing a closing delimiter (paren, bracket, curly) where that delimiter

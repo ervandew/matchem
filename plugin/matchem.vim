@@ -67,6 +67,9 @@ endif
 if !exists('g:MatchemExpandCr')
   let g:MatchemExpandCr = 1
 endif
+if !exists('g:MatchemExpandNl')
+  let g:MatchemExpandNl = 1
+endif
 
 if !exists('g:MatchemExpandCrEndChars')
   let g:MatchemExpandCrEndChars = ['}', ']']
@@ -133,6 +136,10 @@ function! s:Init() " {{{
     if !has('gui_running')
       imap <silent> <C-[>OC <RIGHT>
     endif
+  endif
+
+  if g:MatchemExpandNl
+    inoremap <silent> <nl> <c-r>=<SID>ExpandNl()<nl>
   endif
 
   if g:MatchemExpandCr
@@ -589,7 +596,15 @@ function! s:EndOfLine(char) " {{{
   return ''
 endfunction " }}}
 
+function! s:ExpandNl() " {{{
+  return s:ExpandNewLine('<nl>', 1)
+endfunction " }}}
+
 function! s:ExpandCr(cr) " {{{
+  return s:ExpandNewLine('<cr>', a:cr)
+endfunction " }}}
+
+function! s:ExpandNewLine(char, cr) " {{{
   silent! undojoin
 
   let CrFuncResult = ''
@@ -628,7 +643,7 @@ function! s:ExpandCr(cr) " {{{
   "   - undo won't remove the auto added close paren
   "   - if there is blank line below, then undo works correctly
   "     - somehow related to Path 7.3.452 (undo + paste close to last line)?
-  let result = s:RepeatFixupFlush('<cr>')
+  let result = s:RepeatFixupFlush(a:char)
   let lefts = ""
   let index = 0
   while index < len(result)
