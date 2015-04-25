@@ -116,5 +116,22 @@ Mappings                                         *matchem-mappings*
     imap <c-e> <Plug>MatchemSkipNext
     imap <c-y> <Plug>MatchemSkipAll
 <
+-----------------------------------------------------------------------------
+Mappings customization                            *matchem-mappings-custom*
+
+  Matchem exports all its fixup functions in public namespace, so it is
+  possible to remap any mapping which is hold by matchem.
+
+  Just look how mapping is hold by matchem, then remap keybinding by appending
+  new code to the end of mapping.
+
+  For example, this is how matchem can be used with UltiSnips: >
+
+      inoremap <c-j>
+        \ <c-r>=g:MatchemRepeatFixupFlush("<c-j>")<cr>
+        \<c-r>=UltiSnips#JumpForwards()<cr>
+<
+  Note: matchem already comes with UltiSnips integration, so it's not needed
+  to do such mapping.
 
 vim:tw=78:ft=help:norl:
