@@ -97,17 +97,26 @@ for [ft, cases] in items(s:MatchEdgeCasesDefaults)
 endfor
 
 if !exists('g:MatchemUndoBreakChars')
-  let g:MatchemUndoBreakChars = []
+  let g:MatchemUndoBreakChars = {}
 endif
-let g:MatchemUndoBreakChars = [
-    \ '<esc>', '<c-[>', '<c-c>', '<c-g>', '<c-o>',
-    \ '<left>', '<right>', '<up>', '<down>',
-    \ '<c-left>', '<c-right>', '<c-up>', '<c-down>',
-    \ '<s-left>', '<s-right>', '<s-up>', '<s-down>',
-    \ '<home>', '<end>', '<c-home>', '<c-end>',
-    \ '<pageup>', '<pagedown>',
-  \ ] + g:MatchemUndoBreakChars
+let g:MatchemUndoBreakChars = extend({
+    \ '<esc>': 1, '<c-[>': 1, '<c-c>': 1, '<c-g>': 0, '<c-o>': 1,
+    \ '<left>': 1, '<right>': 1, '<up>': 0, '<down>': 0,
+    \ '<c-left>': 0, '<c-right>': 0, '<c-up>': 0, '<c-down>': 0,
+    \ '<s-left>': 0, '<s-right>': 0, '<s-up>': 0, '<s-down>': 0,
+    \ '<home>': 0, '<end>': 0, '<c-home>': 0, '<c-end>': 0,
+    \ '<pageup>': 0, '<pagedown>': 0
+  \ }, g:MatchemUndoBreakChars)
 
+let s:UltiSnipsEnabled = 0
+if exists('g:UltiSnipsJumpForwardTrigger')
+  let s:UltiSnipsEnabled = 1
+  if tolower(g:UltiSnipsJumpForwardTrigger) == '<c-j>'
+    let g:MatchemUndoBreakChars = extend(
+      \ {'<c-j>': 1},
+      \ g:MatchemUndoBreakChars)
+  endif
+endif
 " }}}
 
 function! s:Init() " {{{
@@ -116,18 +125,34 @@ function! s:Init() " {{{
     autocmd BufEnter,FileType * call <SID>InitBuffer()
   augroup END
 
-  inoremap <silent> <bs> <c-r>=<SID>MatchBackspace("\<lt>bs>")<cr>
-  inoremap <silent> <del> <c-r>=<SID>MatchDelete("\<lt>del>")<cr>
+  inoremap <silent> <bs> <c-r>=g:MatchemMatchBackspace("\<lt>bs>")<cr>
+  inoremap <silent> <del> <c-r>=g:MatchemMatchDelete("\<lt>del>")<cr>
 
   imap <script> <Plug>MatchemSkipNext <c-r>=<SID>Skip(1)<cr>
   imap <script> <Plug>MatchemSkipAll <c-r>=<SID>Skip(0)<cr>
 
   if g:MatchemRepeatFixup
     " hack and a half to get working undo/repeat support
-    for char in g:MatchemUndoBreakChars
+    for char in keys(g:MatchemUndoBreakChars)
       let escaped = substitute(char, '<', '\<lt>', '')
-      exec 'inoremap <silent> ' . char .
-        \ ' <c-r>=<SID>RepeatFixupFlush("' . escaped . '")<cr>' . char
+      if s:UltiSnipsEnabled && tolower(g:UltiSnipsJumpForwardTrigger) == char
+        exec 'inoremap <silent> ' . char .
+          \ ' <c-r>=g:MatchemRepeatFixupFlush("' . escaped . '")<cr>' .
+          \ '<c-r>=UltiSnips#JumpForwards()<cr>'
+        exec 'snoremap <silent> ' . char .
+          \ ' <Esc>:call UltiSnips#JumpForwards()<cr>'
+        let g:UltiSnipsJumpForwardTrigger = '<nil>'
+      elseif s:UltiSnipsEnabled && tolower(g:UltiSnipsJumpBackwardTrigger) == char
+        exec 'inoremap <silent> ' . char .
+          \ ' <c-r>=g:MatchemRepeatFixupFlush("' . escaped . '")<cr>' .
+          \ '<c-r>=UltiSnips#JumpBackwards()<cr>'
+        exec 'snoremap <silent> ' . char .
+          \ ' <Esc>:call UltiSnips#JumpBackwards()<cr>'
+        let g:UltiSnipsJumpBackwardTrigger = '<nil>'
+      else
+        exec 'inoremap <silent> ' . char .
+          \ ' <c-r>=g:MatchemRepeatFixupFlush("' . escaped . '")<cr>' . char
+      endif
     endfor
 
     " blatantly stolen from delimitMate to fix the repeat fix up mappings in
@@ -138,8 +163,8 @@ function! s:Init() " {{{
     endif
   endif
 
-  if g:MatchemExpandNl
-    inoremap <silent> <nl> <c-r>=<SID>ExpandNl()<nl>
+  if g:MatchemExpandNl && !s:UltiSnipsEnabled
+    inoremap <silent> <nl> <c-r>=g:MatchemExpandNl()<nl>
   endif
 
   if g:MatchemExpandCr
@@ -165,12 +190,12 @@ function! s:Init() " {{{
       if map =~? funcmap
         let s:CrFunc = substitute(map, funcmap, '\1', '')
         let s:CrFuncArgs = substitute(map, funcmap, '\2', '')
-        inoremap <silent> <cr> <c-r>=<SID>ExpandCr(1)<cr>
+        inoremap <silent> <cr> <c-r>=g:MatchemExpandCr(1)<cr>
       else
-        exec "inoremap <script> <cr> <c-r>=<SID>ExpandCr(" . cr . ")<cr>" . map
+        exec "inoremap <script> <cr> <c-r>=g:MatchemExpandCr(" . cr . ")<cr>" . map
       endif
     else
-      inoremap <silent> <cr> <c-r>=<SID>ExpandCr(1)<cr>
+      inoremap <silent> <cr> <c-r>=g:MatchemExpandCr(1)<cr>
     endif
   endif
 endfunction " }}}
@@ -196,9 +221,9 @@ function! s:InitBuffer() " {{{
   endfor
 
   for [start, end] in items(b:matchempairs)
-    exec printf('inoremap <silent> <buffer> %s %s<c-r>=<SID>MatchStart()<cr>', start, start)
+    exec printf('inoremap <silent> <buffer> %s %s<c-r>=g:MatchemMatchStart()<cr>', start, start)
     if start != end
-      exec printf('inoremap <silent> <buffer> %s <c-r>=<SID>MatchEnd("%s")<cr>', end, end)
+      exec printf('inoremap <silent> <buffer> %s <c-r>=g:MatchemMatchEnd("%s")<cr>', end, end)
     endif
   endfor
 
@@ -210,7 +235,7 @@ function! s:InitBuffer() " {{{
     " open curly and semicolon for langs with c like syntax
     if &ft =~ '^\(c\(pp\|s\)\?\|html.*\|java\|javascript\|perl\|php\)$'
       if maparg(';', 'i') == ''
-        inoremap <buffer> <expr> ; <SID>EndOfLine(';')
+        inoremap <buffer> <expr> ; g:MatchemEndOfLine(';')
       endif
       if maparg('{', 'i') == '' || maparg('{', 'i') =~ '_MatchStart()'
         imap <buffer> <expr> { <SID>EndOfLine('{')
@@ -219,13 +244,13 @@ function! s:InitBuffer() " {{{
     " colon for python
     elseif &ft == 'python'
       if maparg(':', 'i') == ''
-        inoremap <buffer> <expr> : <SID>EndOfLine(':')
+        inoremap <buffer> <expr> : g:MatchemEndOfLine(':')
       endif
     endif
   endif
 endfunction " }}}
 
-function! s:MatchStart() " {{{
+function! g:MatchemMatchStart() " {{{
   if &paste
     return ''
   endif
@@ -356,7 +381,7 @@ function! s:MatchStart() " {{{
   return result
 endfunction " }}}
 
-function! s:MatchEnd(char) " {{{
+function! g:MatchemMatchEnd(char) " {{{
   if &paste
     return a:char
   endif
@@ -443,7 +468,7 @@ function! s:MatchEnd(char) " {{{
   return result
 endfunction " }}}
 
-function! s:MatchBackspace(char) " {{{
+function! g:MatchemMatchBackspace(char) " {{{
   if !exists('b:matchempairs')
     return a:char
   endif
@@ -467,7 +492,7 @@ function! s:MatchBackspace(char) " {{{
   return a:char
 endfunction " }}}
 
-function! s:MatchDelete(char) " {{{
+function! g:MatchemMatchDelete(char) " {{{
   if !exists('b:matchempairs')
     return a:char
   endif
@@ -497,7 +522,7 @@ function! s:RepeatFixupPeek(char) " {{{
   return 0
 endfunction " }}}
 
-function! s:RepeatFixupFlush(char) " {{{
+function! g:MatchemRepeatFixupFlush(char) " {{{
   if !exists('b:matchemqueue')
     return ''
   endif
@@ -518,18 +543,20 @@ function! s:RepeatFixupFlush(char) " {{{
 
     " make sure the cursor ends up where the user expects it to when leaving
     " insert mode.
-    if a:char =~ '^\(<esc>\|<c-\[>\|<c-c>\|<c-o>\)$'
-      let num = len(result)
-      while num > 0
-        let result .= "\<left>"
-        let num -= 1
-      endwhile
+    if has_key(g:MatchemUndoBreakChars, a:char)
+      if g:MatchemUndoBreakChars[a:char]
+        let num = len(result)
+        while num > 0
+          let result .= "\<left>"
+          let num -= 1
+        endwhile
+      endif
     endif
   endif
   return result
 endfunction " }}}
 
-function! s:EndOfLine(char) " {{{
+function! g:MatchemEndOfLine(char) " {{{
   let col = col('.')
   let line = getline('.')
   let end = line[col - 1]
@@ -596,17 +623,16 @@ function! s:EndOfLine(char) " {{{
   return ''
 endfunction " }}}
 
-function! s:ExpandNl() " {{{
+function! g:MatchemExpandNl() " {{{
   return s:ExpandNewLine('<nl>', 1)
 endfunction " }}}
 
-function! s:ExpandCr(cr) " {{{
+function! g:MatchemExpandCr(cr) " {{{
   return s:ExpandNewLine('<cr>', a:cr)
 endfunction " }}}
 
 function! s:ExpandNewLine(char, cr) " {{{
   silent! undojoin
-
   let CrFuncResult = ''
   if exists('s:CrFunc')
     exec 'let CrFuncResult = function(s:CrFunc)(' . s:CrFuncArgs . ')'
@@ -643,7 +669,7 @@ function! s:ExpandNewLine(char, cr) " {{{
   "   - undo won't remove the auto added close paren
   "   - if there is blank line below, then undo works correctly
   "     - somehow related to Path 7.3.452 (undo + paste close to last line)?
-  let result = s:RepeatFixupFlush(a:char)
+  let result = g:MatchemRepeatFixupFlush(a:char)
   let lefts = ""
   let index = 0
   while index < len(result)
@@ -877,4 +903,4 @@ call s:Init()
 
 let &cpo = s:save_cpo
 
-" vim:ft=vim:fdm=marker
+" vim:ft=vim:fdm=marker:ts=2:sts=2:sw=2
