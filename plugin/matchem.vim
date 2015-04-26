@@ -139,11 +139,15 @@ function! s:Init() " {{{
         exec 'inoremap <silent> ' . char .
           \ ' <c-r>=g:MatchemRepeatFixupFlush("' . escaped . '")<cr>' .
           \ '<c-r>=UltiSnips#JumpForwards()<cr>'
+        exec 'snoremap <silent> ' . char .
+          \ ' <Esc>:call UltiSnips#JumpForwards()<cr>'
         let g:UltiSnipsJumpForwardTrigger = '<nil>'
       elseif s:UltiSnipsEnabled && tolower(g:UltiSnipsJumpBackwardTrigger) == char
         exec 'inoremap <silent> ' . char .
           \ ' <c-r>=g:MatchemRepeatFixupFlush("' . escaped . '")<cr>' .
           \ '<c-r>=UltiSnips#JumpBackwards()<cr>'
+        exec 'snoremap <silent> ' . char .
+          \ ' <Esc>:call UltiSnips#JumpBackwards()<cr>'
         let g:UltiSnipsJumpBackwardTrigger = '<nil>'
       else
         exec 'inoremap <silent> ' . char .
