@@ -11,12 +11,12 @@ dist:
 		-c '$$,$$d _' -c '%MkVimball matchem .' -c 'q!'
 
 test:
-	@vim -c "redir! > $(TEMP) | echo findfile('autoload/vunit.vim', escape(&rtp, ' ')) | quit"
+	@vim -c "redir! > $(TEMP) | echo findfile('autoload/vunit.vim', escape(&rtp, ' ')) | quit" 2> /dev/null
 	@if [ -n "$$(cat $(TEMP))" ] ; then \
 			vunit=$$(dirname $$(dirname $$(cat $(TEMP)))) ; \
 			if [ -e $$vunit/bin/vunit ] ; then \
 				mkdir -p build/test ; \
-				$$vunit/bin/vunit -d build/test -r $$PWD -p plugin/matchem.vim -t test/**/*.vim ; \
+				$$vunit/bin/vunit -d build/test -r $$PWD -p plugin/*.vim -t test/**/*.vim ; \
 			else \
 				echo "Unable to locate vunit script" ; \
 			fi ; \
